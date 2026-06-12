@@ -1,0 +1,27 @@
+{
+  "name": "live-zombies",
+  "version": "1.0.0",
+  "description": "Compliant admin dashboard and FFmpeg orchestrator for authorized live streaming workflows.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/server.js && node --check public/app.js",
+    "test": "npm run check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oxyroid/live-zombies.git"
+  },
+  "keywords": [
+    "live-streaming",
+    "ffmpeg",
+    "dashboard"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/oxyroid/live-zombies/issues"
+  },
+  "homepage": "https://github.com/oxyroid/live-zombies#readme"
+}

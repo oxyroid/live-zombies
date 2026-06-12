@@ -1,1 +1,72 @@
 # live-zombies
+
+A compliant live streaming operations console for running **owned or properly licensed** video sources through official platform ingest endpoints.
+
+This project intentionally does **not** automate account creation, bypass platform review, evade anti-abuse systems, scrape platform APIs, or provide copyrighted media. It only orchestrates FFmpeg against RTMP/SRT ingest URLs that an operator obtains from bilibili, Douyin, or another platform's official creator/live console.
+
+## Features
+
+- Admin dashboard protected by an `ADMIN_TOKEN`.
+- Stream task records for platform, official ingest endpoint, authorized sources, schedule, retry policy, and alert contacts.
+- Explicit copyright/authorization metadata before any task can be created.
+- FFmpeg process orchestration for RTMP/RTMPS and SRT targets.
+- Manual start, stop, source rotation, retry, and deletion.
+- Bounded retry handling with backoff to avoid infinite restart loops.
+- Health, metrics, alerts, and audit-log APIs.
+- Runtime data stored under `data/state.json`, which is ignored by Git.
+
+## Requirements
+
+- Node.js 18 or newer.
+- FFmpeg installed and available on `PATH` for actual streaming.
+- Official platform ingest URL from the platform's own live/creator dashboard.
+- Owned or licensed media files/URLs.
+
+## Quick start
+
+```bash
+export ADMIN_TOKEN="replace-with-a-strong-secret"
+npm start
+```
+
+Open `http://127.0.0.1:8080`, enter the same token, and create a stream task.
+
+Optional environment variables:
+
+- `PORT`: dashboard/API port. Defaults to `8080`.
+- `DASHBOARD_HOST`: listen address. Defaults to `127.0.0.1`.
+
+## Compliance boundary
+
+Operators must confirm every source is self-owned or licensed and provide an authorization owner and license reference. The service validates that:
+
+- platform is one of `bilibili` or `douyin`;
+- media sources are local absolute paths or HTTP(S) URLs marked as authorized;
+- targets are RTMP, RTMPS, or SRT ingest URLs;
+- retries are bounded.
+
+The application does not contain platform credentials and redacts URLs from API responses, audit records, and alerts where they may contain keys or tokens.
+
+## API overview
+
+All `/api/*` endpoints require a standard bearer authorization header containing the configured admin token.
+
+Endpoints:
+
+- `GET /api/health`
+- `GET /api/metrics`
+- `GET /api/streams`
+- `POST /api/streams`
+- `PUT /api/streams/:id`
+- `DELETE /api/streams/:id`
+- `POST /api/streams/:id/start`
+- `POST /api/streams/:id/stop`
+- `POST /api/streams/:id/retry`
+- `GET /api/alerts`
+- `GET /api/audit`
+
+## Validation
+
+```bash
+npm test
+```
