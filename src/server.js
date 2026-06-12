@@ -14,10 +14,32 @@ const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.DASHBOARD_HOST || '127.0.0.1';
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 const MAX_BODY_BYTES = 1024 * 1024;
+const ALERT_WEBHOOK_HOSTS = new Set(
+  (process.env.ALERT_WEBHOOK_HOSTS || '')
+    .split(',')
+    .map(host => host.trim().toLowerCase())
+    .filter(Boolean),
+);
 
 if (!ADMIN_TOKEN) {
   console.error('ADMIN_TOKEN is required. Set a strong token before starting the dashboard.');
   process.exit(1);
+}
+
+function validateWebhookUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return 'alerting.webhookUrl must be a valid URL';
+  }
+  if (parsed.protocol !== 'https:') {
+    return 'alerting.webhookUrl must use https';
+  }
+  if (!ALERT_WEBHOOK_HOSTS.has(parsed.hostname.toLowerCase())) {
+    return 'alerting.webhookUrl host must be listed in ALERT_WEBHOOK_HOSTS';
+  }
+  return '';
 }
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -99,6 +121,10 @@ function sanitize(value) {
       return;
     }
     if (!['http:', 'https:'].includes(parsed.protocol)) return;
+    if (!ALERT_WEBHOOK_HOSTS.has(parsed.hostname.toLowerCase())) {
+      audit('alert.webhook.blocked', { streamId: entry.streamId, host: parsed.hostname });
+      return;
+    }
     const payload = JSON.stringify({
       id: entry.id,
       at: entry.at,
@@ -143,7 +169,8 @@ function send(res, status, payload, headers = {}) {
 }
 
 function sendFile(res, filePath) {
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  const relative = path.relative(PUBLIC_DIR, filePath);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
     send(res, 403, 'Forbidden');
     return;
   }
@@ -229,6 +256,10 @@ function validateStream(input) {
   }
   if (!input.target || !isAllowedTarget(input.target.ingestUrl)) {
     errors.push('target.ingestUrl must be an official RTMP or SRT ingest URL');
+  }
+  if (input.alerting?.webhookUrl) {
+    const webhookError = validateWebhookUrl(input.alerting.webhookUrl);
+    if (webhookError) errors.push(webhookError);
   }
   const maxRetries = Number(input.retryPolicy?.maxRetries ?? 3);
   if (!Number.isInteger(maxRetries) || maxRetries < 0 || maxRetries > 20) {

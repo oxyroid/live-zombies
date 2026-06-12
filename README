@@ -35,6 +35,7 @@ Optional environment variables:
 
 - `PORT`: dashboard/API port. Defaults to `8080`.
 - `DASHBOARD_HOST`: listen address. Defaults to `127.0.0.1`.
+- `ALERT_WEBHOOK_HOSTS`: comma-separated allowlist of HTTPS webhook hostnames that may receive alert callbacks.
 
 ## Compliance boundary
 
@@ -44,6 +45,7 @@ Operators must confirm every source is self-owned or licensed and provide an aut
 - media sources are local absolute paths or HTTP(S) URLs marked as authorized;
 - targets are RTMP, RTMPS, or SRT ingest URLs;
 - retries are bounded.
+- webhook alerts use HTTPS and an explicit host allowlist.
 
 The application does not contain platform credentials and redacts URLs from API responses, audit records, and alerts where they may contain keys or tokens.
 
